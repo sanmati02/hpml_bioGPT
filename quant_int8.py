@@ -116,7 +116,7 @@ wandb.log({
 
 wandb.finish()
 
-with open('fp16_output.json', 'w') as f:
+with open('int8_output.json', 'w') as f:
     json.dump(hypothesis, f)
 
 print(f"Accuracy: {accuracy:.4f}, Avg Latency: {avg_latency:.4f}, Throughput: {throughput:.2f}")
