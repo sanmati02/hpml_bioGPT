@@ -26,7 +26,7 @@ os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 wandb.init(
     project="biogpt-pubmedqa",
     name=f"torch-compile-{backend}-{mode}-{precision}",
-    config={"backend": backend, "mode": mode, "precision": "float32", "task": "QA-PubMedQA"}
+    config={"backend": backend, "mode": mode, "precision": precision, "task": "QA-PubMedQA"}
 )
 
 # ==== Load model and tokenizer ====
