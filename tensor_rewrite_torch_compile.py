@@ -14,16 +14,18 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--backend", type=str, default="inductor", help="torch.compile backend")
 parser.add_argument("--mode", type=str, default="default", help="torch.compile mode")
+parser.add_argument("--precision", type=str, default="float32", help="quantization")
 args = parser.parse_args()
 
 backend = args.backend
 mode = args.mode
+precision = args.precision
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 wandb.init(
     project="biogpt-pubmedqa",
-    name=f"torch-compile-{backend}-{mode}",
+    name=f"torch-compile-{backend}-{mode}-{precision}",
     config={"backend": backend, "mode": mode, "precision": "float32", "task": "QA-PubMedQA"}
 )
 
