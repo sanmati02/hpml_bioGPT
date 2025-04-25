@@ -72,7 +72,7 @@ for input_ids in tqdm(inputs):
     torch.cuda.synchronize()
     start = time.time()
     with torch.no_grad():
-        output = model.generate(**input_ids, max_new_tokens=128, use_cache=False)
+        output = model.generate(**input_ids, max_new_tokens=256)
     torch.cuda.synchronize()
     latencies.append(time.time() - start)
     y_pred.append(extract_answer(output))
