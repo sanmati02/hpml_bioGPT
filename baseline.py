@@ -1,3 +1,10 @@
+"""
+baseline.py
+
+Runs BioGPT-Large-PubMedQA baseline model
+and logs inference metrics such as accuracy, latency, GPU stats using Weights & Biases.
+"""
+
 import subprocess
 import time
 from tqdm import tqdm
@@ -36,6 +43,7 @@ df.rename(columns={"index": "PMID"}, inplace=True)
 with open("../evaluation/test_ground_truth.json", "r") as f:
     test_ground_truth = json.load(f)
 
+# Join QA with labels
 df_test_ground_truth = pd.DataFrame.from_dict(test_ground_truth, orient="index")
 df_test_ground_truth.reset_index(inplace=True)
 df_test_ground_truth.rename(columns={"index": "PMID"}, inplace=True)
@@ -52,6 +60,7 @@ for sentence in test_data["Question"]:
         sentence = sentence + "."
     questions.append(sentence)
 
+
 y_true = test_data["Answer"].tolist()
 
 # Containers for metrics
@@ -61,7 +70,7 @@ memory_utilization_list = []
 power_usage_list = []
 temperature_list = []
 
-# Function to get GPU metrics
+# Queries GPU statistics including utilization, memory, power, and temperature.
 def get_gpu_info():
     result = subprocess.run(
         ['nvidia-smi', '--query-gpu=utilization.gpu,utilization.memory,power.draw,temperature.gpu', '--format=csv,noheader,nounits'],
@@ -75,13 +84,16 @@ def get_gpu_info():
         'temperature': float(gpu_info[3])
     }
 
-# Inference loop
+# Inference and logging
 answers = []
 for question in tqdm(questions):
     question = question + ". Answer in the following format in yes or no. the answer to the question given the context is"
+   
+    # Inference timing
     start_time = time.time()
 
     inputs = tokenizer(question, return_tensors="pt").to("cuda")
+    # Run model inference with no gradient tracking (saves memory and improves speed)
     with torch.inference_mode():
         beam_output = model.generate(**inputs,
                                      max_new_tokens=256,
@@ -91,13 +103,14 @@ for question in tqdm(questions):
         latency = time.time() - start_time
         latencies.append(latency)
 
+        # Log GPU stats
         gpu_metrics = get_gpu_info()
         gpu_utilization_list.append(gpu_metrics['gpu_utilization'])
         memory_utilization_list.append(gpu_metrics['memory_utilization'])
         power_usage_list.append(gpu_metrics['power_usage'])
         temperature_list.append(gpu_metrics['temperature'])
 
-        # 🟢 Log to wandb per-inference
+        # Log to wandb per-inference
         wandb.log({
             "latency": latency,
             "gpu_utilization": gpu_metrics['gpu_utilization'],
@@ -106,6 +119,7 @@ for question in tqdm(questions):
             "temperature": gpu_metrics['temperature']
         })
 
+        # Decode answer
         answers.append(tokenizer.decode(beam_output[0], skip_special_tokens=True))
 
 # Postprocess output
@@ -115,7 +129,7 @@ prefix = [
     'we have that',
     'in conclusion,',
 ]
-
+# Remove leading phrases or noise that often precede the actual answer
 def strip_prefix(line):
     for p in prefix:
         res = re.search(p, line)
@@ -124,6 +138,7 @@ def strip_prefix(line):
             break
     return line
 
+# Extract a clear yes/no/maybe answer from the decoded model output
 def convert_relis_sentence(sentence):
     ans = None
     segs = re.search(r"the answer to the question given the context is (yes|no|maybe)\b", sentence, re.IGNORECASE)
@@ -132,6 +147,7 @@ def convert_relis_sentence(sentence):
         ans = segs[0].strip()
     return ans
 
+# Parse model output to yes/no/maybe
 hypothesis = []
 fail_cnt = 0
 
@@ -147,7 +163,7 @@ for i, line in enumerate(answers):
         fail_cnt += 1
         print("Failed:id:{}, line:{}".format(i+1, line))
 
-# Final evaluation
+# Compute final metrics
 total_time = sum(latencies)
 throughput = len(questions) / total_time
 avg_latency = sum(latencies) / len(latencies)
@@ -170,7 +186,7 @@ print(f"Average Memory Utilization: {avg_memory_utilization:.2f}%")
 print(f"Average Power Usage: {avg_power_usage:.2f} W")
 print(f"Average Temperature: {avg_temperature:.2f} °C")
 
-# 🟢 Final wandb log
+# Log summary metrics to wandb
 wandb.log({
     "throughput": throughput,
     "avg_latency": avg_latency,

@@ -29,10 +29,10 @@ The precision argument can be changed to `float16`, `float4`, or `int8`.
 `python pruning/pruning.py`
 
 **Quantization**: 
-`python quantization/quant_int8_dynamic_eval.py`
+`python quantization/ptq_dynamic_int8.py`
 
 **TensorRewriting**: 
-`python tensor_rewriting/tensor_experiments --backend tvm --mode default`
+`python tensor_rewriting/tensor_experiments.py --backend tvm --mode default`
 Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are `default`, `ansor`, `max-autotune`. 
 
 ## Results: 
