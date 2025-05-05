@@ -78,9 +78,9 @@ elif backend == "tvm":
     model = tvm_backend(model, example_input)
 
 # ==== Load test data ====
-with open("test_set.json", "r") as f:
+with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
-with open("test_ground_truth.json", "r") as f:
+with open("../evaluation/test_ground_truth.json", "r") as f:
     test_gt = json.load(f)
 
 data = [{"question": item["QUESTION"], "label": test_gt[pmid]} for pmid, item in test_data.items()]

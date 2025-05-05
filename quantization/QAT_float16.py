@@ -83,9 +83,9 @@ wandb.init(
     config={"model": "BioGPT QAT AMP", "task": "QA-PubMedQA"}
 )
 
-with open("test_set.json", "r") as f:
+with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
-with open("test_ground_truth.json", "r") as f:
+with open("../evaluation/test_ground_truth.json", "r") as f:
     test_ground_truth = json.load(f)
 
 df = pd.DataFrame.from_dict(test_data, orient="index").reset_index().rename(columns={"index": "PMID"})

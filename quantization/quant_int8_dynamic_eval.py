@@ -1,62 +1,32 @@
-# biogpt_trt_int8_eval.py
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig, AdamW
-from datasets import Dataset
-import json
-import wandb
-import pandas as pd
-from tqdm import tqdm
-import re
-import time
+# quant_int8_dynamic_eval.py — Dynamic Int8 Quantization + Baseline Eval
 import subprocess
+import time
+from tqdm import tqdm
+import torch
+from torch.quantization import quantize_dynamic
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import json
+import pandas as pd
+import re
 from sklearn.metrics import accuracy_score
-import torch_tensorrt
+import wandb
 
-# ==== 1. Load and preprocess PubMedQA dev set for calibration ====
-with open("../pubmedqa/data/pqal_fold0/dev_set.json") as f:
-    raw_data = json.load(f)
-examples = []
-for pmid, item in raw_data.items():
-    examples.append({
-        "PMID": pmid,
-        "question": item["QUESTION"],
-        "context": " ".join(item["CONTEXTS"]),
-        "label": item["final_decision"]
-    })
-
-tokenizer = AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMEDQA")
-
-def preprocess(example):
-    prompt = example["question"] + " Context: " + example["context"] + ". Answer in yes or no:"
-    return tokenizer(prompt, padding="max_length", truncation=True, max_length=256)
-
-dev_data = Dataset.from_list(examples).map(preprocess)
-
-def calibrate_model_inputs():
-    for item in dev_data:
-        input_tensor = torch.tensor(item["input_ids"]).unsqueeze(0).to(torch.int32).cuda()
-        yield (input_tensor,)
-
-# ==== 2. Load and convert model to TorchScript ====
-model = AutoModelForCausalLM.from_pretrained("microsoft/BioGPT-Large-PubMEDQA").cuda().eval()
-scripted_model = torch.jit.script(model)
-
-# ==== 3. Compile with TensorRT INT8 ====
-trt_model = torch_tensorrt.compile(
-    scripted_model,
-    inputs=[torch_tensorrt.Input((1, 256), dtype=torch.int32)],
-    enabled_precisions={torch.int8},
-    calibrator=calibrate_model_inputs(),
-    truncate_long_and_double=True
+wandb.init(
+    project="biogpt-pubmedqa",
+    name="int8-dynamic-inference",
+    config={"model": "BioGPT-Large-PubMedQA", "precision": "int8-dynamic", "task": "QA-PubMedQA"}
 )
 
-# ==== 4. Load test data ====
-with open("test_set.json", "r") as f:
+# Load model and apply dynamic quantization
+model = AutoModelForCausalLM.from_pretrained("microsoft/BioGPT-Large-PubMedQA")
+model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8).eval()
+tokenizer = AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA")
+
+# Load test data
+with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
 df = pd.DataFrame.from_dict(test_data, orient="index").reset_index().rename(columns={"index": "PMID"})
-with open("test_ground_truth.json", "r") as f:
+with open("../evaluation/test_ground_truth.json", "r") as f:
     test_gt = json.load(f)
 gt_df = pd.DataFrame.from_dict(test_gt, orient="index").reset_index().rename(columns={"index": "PMID"})
 test_data = pd.merge(gt_df, df, on="PMID", how="inner")[["QUESTION", 0]]
@@ -65,15 +35,8 @@ test_data.columns = ["Question", "Answer"]
 questions = [(q.strip() + ".") if not q.strip().endswith(".") else q.strip() for q in test_data["Question"]]
 y_true = test_data["Answer"].tolist()
 
-# ==== 5. Inference Loop + Metrics ====
 latencies, answers = [], []
 gpu_utilization_list, memory_utilization_list, power_usage_list, temperature_list = [], [], [], []
-
-wandb.init(
-    project="biogpt-pubmedqa",
-    name="tensorrt-int8-inference",
-    config={"model": "BioGPT-Large-PubMedQA", "precision": "int8-tensorrt", "task": "QA-PubMedQA"}
-)
 
 def get_gpu_info():
     result = subprocess.run([
@@ -88,18 +51,13 @@ def get_gpu_info():
         'temperature': float(gpu_info[3])
     }
 
-def convert_relis_sentence(sentence):
-    match = re.search(r"the answer to the question given the context is (yes|no|maybe)", sentence, re.IGNORECASE)
-    return match.group(1).strip() if match else None
-
 for question in tqdm(questions):
-    prompt = question + " Answer in the following format in yes or no. the answer to the question given the context is"
-    inputs = tokenizer(prompt, return_tensors="pt")
-    input_ids = inputs["input_ids"].cuda()
-    start = time.time()
-    with torch.no_grad():
-        output = trt_model.generate(input_ids=input_ids, max_new_tokens=256, num_beams=1)
-    latency = time.time() - start
+    question += " Answer in the following format in yes or no. the answer to the question given the context is"
+    start_time = time.time()
+    inputs = tokenizer(question, return_tensors="pt")
+    with torch.inference_mode():
+        output = model.generate(**inputs, max_new_tokens=256, num_beams=1)
+    latency = time.time() - start_time
     latencies.append(latency)
 
     gpu_metrics = get_gpu_info()
@@ -111,7 +69,6 @@ for question in tqdm(questions):
     wandb.log({**gpu_metrics, "latency": latency})
     answers.append(tokenizer.decode(output[0], skip_special_tokens=True))
 
-# ==== 6. Postprocessing and Logging ====
 prefix = ['(learned[0-9]+ )+', 'we can conclude that', 'we have that', 'in conclusion,']
 
 def strip_prefix(line):
@@ -120,11 +77,18 @@ def strip_prefix(line):
             return re.split(p, line)[-1].strip()
     return line
 
-hypothesis = []
-for line in answers:
+def convert_relis_sentence(sentence):
+    match = re.search(r"the answer to the question given the context is (yes|no|maybe)", sentence, re.IGNORECASE)
+    return match.group(1).strip() if match else None
+
+hypothesis, fail_cnt = [], 0
+for i, line in enumerate(answers):
     line = line[:-1] if line.endswith(".") else line
     ans = convert_relis_sentence(strip_prefix(line))
     hypothesis.append(ans if ans else "failed")
+    if not ans:
+        fail_cnt += 1
+        print(f"Failed:id:{i+1}, line:{line}")
 
 accuracy = accuracy_score(y_true, hypothesis)
 total_time = sum(latencies)
@@ -143,7 +107,7 @@ wandb.log({
 
 wandb.finish()
 
-with open('tensorrt_int8_output.json', 'w') as f:
+with open('int8_dynamic_output.json', 'w') as f:
     json.dump(hypothesis, f)
 
 print(f"Accuracy: {accuracy:.4f}, Avg Latency: {avg_latency:.4f}, Throughput: {throughput:.2f}")

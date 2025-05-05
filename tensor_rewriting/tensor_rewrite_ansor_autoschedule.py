@@ -76,9 +76,9 @@ model.eval()
 model = torch.compile(model, mode=mode, backend=tvm_ansor_backend)
 
 # ==== Load test data ====
-with open("test_set.json", "r") as f:
+with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
-with open("test_ground_truth.json", "r") as f:
+with open("../evaluation/test_ground_truth.json", "r") as f:
     test_gt = json.load(f)
 
 data = []

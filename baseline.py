@@ -26,14 +26,14 @@ tokenizer = AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA")
 model = AutoModelForCausalLM.from_pretrained("microsoft/BioGPT-Large-PubMedQA").cuda()
 
 # Load test data
-with open("test_set.json", "r") as f:
+with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
 
 df = pd.DataFrame.from_dict(test_data, orient="index")
 df.reset_index(inplace=True)
 df.rename(columns={"index": "PMID"}, inplace=True)
 
-with open("test_ground_truth.json", "r") as f:
+with open("../evaluation/test_ground_truth.json", "r") as f:
     test_ground_truth = json.load(f)
 
 df_test_ground_truth = pd.DataFrame.from_dict(test_ground_truth, orient="index")

@@ -33,11 +33,11 @@ input_shape = input_shape[0]
 tokenizer = AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA")
 
 # Load test data
-with open("test_set.json", "r") as f:
+with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
 df = pd.DataFrame.from_dict(test_data, orient="index").reset_index().rename(columns={"index": "PMID"})
 
-with open("test_ground_truth.json", "r") as f:
+with open("../evaluation/test_ground_truth.json", "r") as f:
     test_gt = json.load(f)
 gt_df = pd.DataFrame.from_dict(test_gt, orient="index").reset_index().rename(columns={"index": "PMID"})
 test_data = pd.merge(gt_df, df, on="PMID", how="inner")[["QUESTION", 0]]
