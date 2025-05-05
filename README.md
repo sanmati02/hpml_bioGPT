@@ -1,10 +1,3 @@
- A description of the project
-An outline of the code repository
-Example commands to execute the code         
-Results (including charts/tables) and your observations  
-Link to your wandb project board (Make sure the wandb project is publicly available)
-
-
 # BioGPT Optimization
 
 ## Project Description:
@@ -28,18 +21,23 @@ We also include our baseline model code that runs the BioGPT model with no optim
 
 ## Example Commands: 
 
-**Precision Reduction**: `python precision_reduction/precision_experiments.py --int8`
-The argument can be changed to `float16`, `float4`, or `int8`. 
+**Precision Reduction**: 
+`python precision_reduction/precision_experiments.py --precision int4`
+The precision argument can be changed to `float16`, `float4`, or `int8`. 
 
-**Pruning**: `python pruning/pruning.py`
+**Pruning**: 
+`python pruning/pruning.py`
 
-**Quantization**: `python quantization/quant_int8_dynamic_eval.py`
+**Quantization**: 
+`python quantization/quant_int8_dynamic_eval.py`
 
-**TensorRewriting**: `python tensor_rewriting/tensor_experiments --backend tvm --mode default`
+**TensorRewriting**: 
+`python tensor_rewriting/tensor_experiments --backend tvm --mode default`
 Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are `default`, `ansor`, `max-autotune`. 
 
 ## Results: 
 
+### Observations
 
 ## WandB project link: 
 
