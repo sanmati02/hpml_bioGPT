@@ -29,7 +29,6 @@ The precision argument can be changed to `float16`, `float4`, or `int8`.
 `python pruning/pruning_experiments.py --strategy unstructured`
 The strategy argument can be changed to `structured`, or `block` 
 
-
 **Quantization**: 
 `python quantization/ptq_dynamic_int8.py`
 
@@ -47,8 +46,12 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 - GPU/Memory utilization sharply drops with lower precisions, showing potential for resource-constrained environment
 
 **Pruning**: 
+<img width="852" alt="image" src="https://github.com/user-attachments/assets/47e531d9-cee1-4463-ad17-2745de22169e" />
 
-
+- Structured pruning preserved accuracy and maximized GPU utilization, making it the most deployment-friendly strategy.
+- Unstructured pruning slightly dropped accuracy and hurt inference speed, showing poor GPU execution efficiency.
+- Block sparsity pruning led to the worst latency (2.56s) and lowest throughput, despite maintaining accuracy — likely due to memory and kernel overhead.
+- 
 **Quantization**: 
 <img width="536" alt="image" src="https://github.com/user-attachments/assets/f72733f4-fad4-4eca-9b25-041dbcd7a56c" />
 
