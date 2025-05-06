@@ -45,18 +45,24 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 - Int8, Float4, and Int4 all retain reasonable accuracy but suffer from significantly higher latency and lower throughput
 - GPU/Memory utilization sharply drops with lower precisions, showing potential for resource-constrained environment
 
+
+
 **Pruning**: 
 <img width="852" alt="image" src="https://github.com/user-attachments/assets/47e531d9-cee1-4463-ad17-2745de22169e" />
 
 - Structured pruning preserved accuracy and maximized GPU utilization, making it the most deployment-friendly strategy.
 - Unstructured pruning slightly dropped accuracy and hurt inference speed, showing poor GPU execution efficiency.
 - Block sparsity pruning led to the worst latency (2.56s) and lowest throughput, despite maintaining accuracy — likely due to memory and kernel overhead.
-- 
+
+
+  
 **Quantization**: 
 <img width="536" alt="image" src="https://github.com/user-attachments/assets/f72733f4-fad4-4eca-9b25-041dbcd7a56c" />
 
 - QAT significantly improves efficiency over baseline with reduced latency and higher throughput while maintaining competitive accuracy
 - PTQ results in a large accuracy drop and much slower inference 
+
+
 
 **Tensor Rewriting**: 
 <img width="1091" alt="image" src="https://github.com/user-attachments/assets/e1ec77f6-ec73-4b07-a49f-88b6cc9ceb8a" /> 
