@@ -37,7 +37,19 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 
 ## Results: 
 
-### Observations
+**Precision Reduction**: 
+<img width="853" alt="image" src="https://github.com/user-attachments/assets/e503683b-7118-47e0-98d0-8cf396aee238" />
+
+- Float16 offers the best trade-off: it matches or slightly improves accuracy over baseline with lowest latency and highest throughput
+- Int8, Float4, and Int4 all retain reasonable accuracy but suffer from significantly higher latency and lower throughput
+- GPU/Memory utilization sharply drops with lower precisions, showing potential for resource-constrained environment
+
+**Pruning**: 
+
+**Quantization**: 
+
+**Tensor Rewriting**: 
+
 
 ## WandB project link: 
 
