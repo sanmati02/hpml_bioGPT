@@ -14,6 +14,7 @@ For each of our techniques, we have created a separate folders containing corres
 2. Pruning: Contains experiments such as unstructured, structured, and block pruning
 3. Quantization: Contains experiments for Quantization Aware Training & Post-Training Quantization 
 4. Tensor-rewriting: Contains experiments for different torch.compile modes (`aot_eager`) and backends (`tvm`, `tvm-ansor`, `inductor`, `InductorMax Autotune`)
+5. Combined Experiments: Contains experiments for running our best methods across post-training (float16, inductor/aot_eager) and during training (float16, inductor/aot_eager, QAT, structured pruning). 
 
 The evaluation folder contains the PubMed Test Dataset and ground truth samples that each of our optimized models 
 
@@ -35,6 +36,11 @@ The strategy argument can be changed to `structured`, or `block`
 **TensorRewriting**: 
 `python tensor_rewriting/tensor_experiments.py --backend tvm --mode default`
 Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are `default`, `ansor`, `max-autotune`. 
+
+**Combined Experiments**: 
+`python combined_experiments/during_training.py --backend inductor`
+Backend arguments include `aot_eager` and `inductor`. 
+
 
 ## Results: 
 
@@ -74,6 +80,10 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 - Accuracy stays constant at 55.2% across all tensor rewrite methods
 - AOT_Eager and InductorMaxAutotune offer the best trade-off with reduced latency and balanced GPU/power efficiency
 - TVM and TVM_Ansor show unusually high GPU utilization but yield longer latency and lower throughput
+
+**Combined Experiments**: 
+
+- 
 
 
 ## WandB project link: 
