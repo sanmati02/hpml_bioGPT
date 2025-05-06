@@ -18,7 +18,7 @@ from sklearn.metrics import accuracy_score
 import torch.nn.utils.prune as prune
 import wandb
 
-# 🟡 Initialize wandb
+# Initialize wandb
 wandb.init(
     project="biogpt-pubmedqa",
     name="pruning_weights_eval",
