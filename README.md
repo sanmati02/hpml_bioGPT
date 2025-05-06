@@ -50,7 +50,7 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 
 **Pruning**: 
 
-<img width="852" alt="image" src="https://github.com/user-attachments/assets/47e531d9-cee1-4463-ad17-2745de22169e" />
+<img width="852" alt="image" src="https://github.com/user-attachments/assets/cb4da44d-1e6f-4935-a0b7-513b0e3fae88" />
 
 - Structured pruning preserved accuracy and maximized GPU utilization, making it the most deployment-friendly strategy.
 - Unstructured pruning slightly dropped accuracy and hurt inference speed, showing poor GPU execution efficiency.
