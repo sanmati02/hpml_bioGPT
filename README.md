@@ -11,9 +11,9 @@ This project is intended to evaluate how well state-of-the-art compiler and quan
 For each of our techniques, we have created a separate folders containing corresponding code files. The following code folders exisit: 
 
 1. Precision Reduction: Contains experiments for float16, float4, int8, int4
-2. Pruning: Contains experiments unstructured pruning
+2. Pruning: Contains experiments such as unstructured, structured, and block pruning
 3. Quantization: Contains experiments for Quantization Aware Training & Post-Training Quantization 
-4. Tensor-rewriting: Contains experiments for different torch.compile modes (`aot_eager`) and backends (`tvm`, `tvm-ansor`, `inductor`, `InductorMax Autotune`, `EiNet`)
+4. Tensor-rewriting: Contains experiments for different torch.compile modes (`aot_eager`) and backends (`tvm`, `tvm-ansor`, `inductor`, `InductorMax Autotune`)
 
 The evaluation folder contains the PubMed Test Dataset and ground truth samples that each of our optimized models 
 
@@ -26,7 +26,9 @@ We also include our baseline model code that runs the BioGPT model with no optim
 The precision argument can be changed to `float16`, `float4`, or `int8`. 
 
 **Pruning**: 
-`python pruning/pruning.py`
+`python pruning/pruning_experiments.py --strategy unstructured`
+The strategy argument can be changed to `structured`, or `block` 
+
 
 **Quantization**: 
 `python quantization/ptq_dynamic_int8.py`
@@ -46,9 +48,19 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 
 **Pruning**: 
 
+
 **Quantization**: 
+<img width="536" alt="image" src="https://github.com/user-attachments/assets/f72733f4-fad4-4eca-9b25-041dbcd7a56c" />
+
+- QAT significantly improves efficiency over baseline with reduced latency and higher throughput while maintaining competitive accuracy
+- PTQ results in a large accuracy drop and much slower inference 
 
 **Tensor Rewriting**: 
+<img width="1091" alt="image" src="https://github.com/user-attachments/assets/e1ec77f6-ec73-4b07-a49f-88b6cc9ceb8a" /> 
+
+- Accuracy stays constant at 55.2% across all tensor rewrite methods
+- AOT_Eager and InductorMaxAutotune offer the best trade-off with reduced latency and balanced GPU/power efficiency
+- TVM and TVM_Ansor show unusually high GPU utilization but yield longer latency and lower throughput
 
 
 ## WandB project link: 
