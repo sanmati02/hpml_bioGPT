@@ -33,7 +33,7 @@ The strategy argument can be changed to `structured`, or `block`
 **Quantization**: 
 `python quantization/ptq_dynamic_int8.py`
 
-**TensorRewriting**: 
+**Tensor Optimization**: 
 `python tensor_rewriting/tensor_experiments.py --backend tvm --mode default`
 Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are `default`, `ansor`, `max-autotune`. 
 
@@ -73,7 +73,7 @@ Backend arguments include `aot_eager` and `inductor`.
 
 
 
-**Tensor Rewriting**: 
+**Tensor Optimization**: 
 
 <img width="1091" alt="image" src="https://github.com/user-attachments/assets/e1ec77f6-ec73-4b07-a49f-88b6cc9ceb8a" /> 
 
@@ -88,4 +88,6 @@ Backend arguments include `aot_eager` and `inductor`.
 
 ## WandB project link: 
 
-The following is our link to wandb - 
+The following is our link to wandb. While the project is private, it has been shared with the teaching staff of the course. 
+
+https://wandb.ai/sc4789-columbia-university/biogpt-pubmedqa?nw=nwusersc4789. 
