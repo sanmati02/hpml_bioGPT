@@ -1,5 +1,5 @@
 """
-float16_compile_experiment.py
+post_training_combined.py
 
 Runs BioGPT-Large-PubMedQA using float16 precision
 + either AOT Eager or InductorMax Autotune backends.
@@ -15,39 +15,40 @@ from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# === Argparse for backend ===
+# Argparse for backend to decide if running Inductor or aot_eager
 parser = argparse.ArgumentParser()
 parser.add_argument("--backend", type=str, choices=["aot_eager", "inductor"], required=True, help="torch.compile backend")
 args = parser.parse_args()
 backend = args.backend
 
-# === Set compile mode for InductorMax Autotune ===
+# Set compile mode for InductorMax Autotune 
 compile_args = {"backend": backend}
 if backend == "inductor":
     compile_args["mode"] = "max-autotune"
 
-# === Initialize wandb ===
+# Initialize wandb 
 wandb.init(
     project="biogpt-pubmedqa",
     name=f"float16-{backend}",
     config={"precision": "float16", "backend": backend}
 )
 
-# === Load model and tokenizer ===
+# Load model and tokenizer with float16 precision
 tokenizer = AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMEDQA")
 model = AutoModelForCausalLM.from_pretrained("microsoft/BioGPT-Large-PubMEDQA").half().cuda().eval()
 model = torch.compile(model, **compile_args)
 
-# === Load test data ===
+# Load test data 
 with open("../evaluation/test_set.json", "r") as f:
     test_data = json.load(f)
 with open("../evaluation/test_ground_truth.json", "r") as f:
     test_gt = json.load(f)
 
+# Clean up/Preprocess training data questions
 questions = [(v["QUESTION"].strip() + "." if not v["QUESTION"].strip().endswith(".") else v["QUESTION"].strip()) for v in test_data.values()]
 y_true = list(test_gt.values())
 
-# === GPU stat collector ===
+# GPU statistics function
 def get_gpu_info():
     result = subprocess.run([
         'nvidia-smi', '--query-gpu=utilization.gpu,utilization.memory,power.draw,temperature.gpu',
@@ -61,37 +62,46 @@ def get_gpu_info():
         "temperature": float(vals[3])
     }
 
-# === Inference ===
+# Run Inference 
 latencies, answers = [], []
 gpu_utilization_list, memory_utilization_list, power_usage_list, temperature_list = [], [], [], []
 
+# For each question in the data set
 for q in tqdm(questions):
+    # Format the question
     q += " Answer in the following format in yes or no. the answer to the question given the context is"
     inputs = tokenizer(q, return_tensors="pt").to("cuda")
     torch.cuda.synchronize()
+    # Inference time
     start_time = time.time()
     with torch.inference_mode():
+        # Pass input through model to recieve output
         output = model.generate(**inputs, max_new_tokens=256)
     torch.cuda.synchronize()
     latencies.append(time.time() - start_time)
 
+    # Gather GPU stats
     metrics = get_gpu_info()
     gpu_utilization_list.append(metrics["gpu_utilization"])
     memory_utilization_list.append(metrics["memory_utilization"])
     power_usage_list.append(metrics["power_usage"])
     temperature_list.append(metrics["temperature"])
+
+    # Log stats into wandb
     wandb.log({**metrics, "latency": latencies[-1]})
 
+    # Post process the data to retrieve yes/no/maybe
     decoded = tokenizer.decode(output[0], skip_special_tokens=True)
     if "yes" in decoded.lower(): answers.append("yes")
     elif "no" in decoded.lower(): answers.append("no")
     elif "maybe" in decoded.lower(): answers.append("maybe")
     else: answers.append("failed")
 
-# === Metrics ===
+# Compute the Metrics
 accuracy = accuracy_score(y_true[:len(answers)], answers)
 throughput = len(answers) / sum(latencies)
 
+# Log metrics into wandb (averages)
 wandb.log({
     "accuracy": accuracy,
     "throughput": throughput,
