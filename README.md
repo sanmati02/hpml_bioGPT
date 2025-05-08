@@ -78,8 +78,7 @@ Backend arguments include `aot_eager` and `inductor`.
 
 
 **Tensor Optimization**: 
-
-<img width="1091" alt="image" src="https://github.com/user-attachments/assets/e1ec77f6-ec73-4b07-a49f-88b6cc9ceb8a" /> 
+<img width="1091" alt="image" src="https://github.com/user-attachments/assets/c3d67c58-150b-4adb-a10f-c83907738df5" /> 
 
 - Accuracy stays constant at 55.2% across all tensor rewrite methods
 - AOT_Eager and InductorMaxAutotune offer the best trade-off with reduced latency and balanced GPU/power efficiency
