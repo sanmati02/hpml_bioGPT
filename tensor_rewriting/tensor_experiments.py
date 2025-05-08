@@ -49,41 +49,44 @@ if backend == "inductor":
 elif backend == "aot_eager":
     model = torch.compile(model, backend="aot_eager", mode=mode)
 elif backend == "tvm":
-    from tvm import auto_scheduler, relay
-    import tvm
-    def tvm_backend(model, example_inputs):
-        input_name = "input0"
-        shape_list = [(input_name, example_inputs.shape)]
-        mod, params = relay.frontend.from_pytorch(model, shape_list)
+    if mode != "ansor":
+        model = torch.compile(model, backend="tvm", mode=mode)
+    else:
+        from tvm import auto_scheduler, relay
+        import tvm
+        def tvm_backend(model, example_inputs):
+            input_name = "input0"
+            shape_list = [(input_name, example_inputs.shape)]
+            mod, params = relay.frontend.from_pytorch(model, shape_list)
 
-        if mode == "ansor":
-            tasks, task_weights = auto_scheduler.extract_tasks(mod["main"], params, target="cuda")
-            tuning_options = auto_scheduler.TuningOptions(
-                num_measure_trials=1000,
-                measure_callbacks=[auto_scheduler.RecordToFile("ansor_tuning.json")],
-                verbose=1,
-            )
-            task_scheduler = auto_scheduler.TaskScheduler(tasks, task_weights)
-            task_scheduler.tune(tuning_options)
-            with auto_scheduler.ApplyHistoryBest("ansor_tuning.json"):
-                with tvm.transform.PassContext(opt_level=3, config={"relay.backend.use_auto_scheduler": True}):
+            if mode == "ansor":
+                tasks, task_weights = auto_scheduler.extract_tasks(mod["main"], params, target="cuda")
+                tuning_options = auto_scheduler.TuningOptions(
+                    num_measure_trials=1000,
+                    measure_callbacks=[auto_scheduler.RecordToFile("ansor_tuning.json")],
+                    verbose=1,
+                )
+                task_scheduler = auto_scheduler.TaskScheduler(tasks, task_weights)
+                task_scheduler.tune(tuning_options)
+                with auto_scheduler.ApplyHistoryBest("ansor_tuning.json"):
+                    with tvm.transform.PassContext(opt_level=3, config={"relay.backend.use_auto_scheduler": True}):
+                        lib = relay.build(mod, target="cuda", params=params)
+            else:
+                with tvm.transform.PassContext(opt_level=3):
                     lib = relay.build(mod, target="cuda", params=params)
-        else:
-            with tvm.transform.PassContext(opt_level=3):
-                lib = relay.build(mod, target="cuda", params=params)
 
-        dev = tvm.cuda()
-        rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](dev))
+            dev = tvm.cuda()
+            rt_mod = tvm.contrib.graph_executor.GraphModule(lib["default"](dev))
 
-        def compiled_model(*args):
-            rt_mod.set_input("input0", tvm.nd.array(args[0].cpu().numpy()))
-            rt_mod.run()
-            return torch.tensor(rt_mod.get_output(0).numpy())
+            def compiled_model(*args):
+                rt_mod.set_input("input0", tvm.nd.array(args[0].cpu().numpy()))
+                rt_mod.run()
+                return torch.tensor(rt_mod.get_output(0).numpy())
 
-        return compiled_model
+            return compiled_model
 
-    example_input = torch.randint(0, 100, (1, 256), dtype=torch.int64).cuda()
-    model = tvm_backend(model, example_input)
+        example_input = torch.randint(0, 100, (1, 256), dtype=torch.int64).cuda()
+        model = tvm_backend(model, example_input)
 
 # Load test data
 with open("../evaluation/test_set.json", "r") as f:
