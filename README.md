@@ -87,7 +87,7 @@ Backend arguments include `aot_eager` and `inductor`.
 
 **Combined Experiments**: 
 
-<img width="399" alt="image" src="https://github.com/user-attachments/assets/7a3f87b3-9d47-4eb3-9046-f0c4287e1ecd" />
+<img width="749" alt="image" src="https://github.com/user-attachments/assets/1949ffca-e460-493d-a00e-c466fc4ba4db" />
 
 - Best all-around trade-off: Combining QAT + structured pruning + float16 + InductorMax achieved strong accuracy with improved latency, throughput, and hardware efficiency
 - Fastest configuration: Float16 + InductorMax reached the lowest latency (1.47s/sample) and highest throughput (0.68 samples/sec), making it ideal when speed is the priority
