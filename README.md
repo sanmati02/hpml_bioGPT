@@ -39,7 +39,11 @@ Backend arguments include `aot_eager`, `tvm` and `inductor`. Mode arguments are 
 
 **Combined Experiments**: 
 `python combined_experiments/during_training.py --backend inductor`
+
+`python combined_experiments/post_training_combined.py --backend inductor`
+
 Backend arguments include `aot_eager` and `inductor`. 
+
 
 
 ## Results: 
@@ -83,7 +87,11 @@ Backend arguments include `aot_eager` and `inductor`.
 
 **Combined Experiments**: 
 
-- 
+<img width="399" alt="image" src="https://github.com/user-attachments/assets/7a3f87b3-9d47-4eb3-9046-f0c4287e1ecd" />
+
+- Best all-around trade-off: Combining QAT + structured pruning + float16 + InductorMax achieved strong accuracy with improved latency, throughput, and hardware efficiency
+- Fastest configuration: Float16 + InductorMax reached the lowest latency (1.47s/sample) and highest throughput (0.68 samples/sec), making it ideal when speed is the priority
+- Stacking orthogonal techniques (weight pruning, quantization, compiler optimization) enables practical deployment of BioGPT without major performance loss
 
 
 ## WandB project link: 
