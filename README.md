@@ -150,6 +150,7 @@ Scripts are organized by technique:
 | Latency (s)          | 1.93     | 6.48       | 1.80           |
 | Throughput           | 0.52     | 0.20       | 0.545          |
 | GPU Utilization (%)  | 48.06    | n/a        | 17.90          |
+| Memory Usage (%)     | 34.90    | n/a        | 41.56          | 
 | Power Usage (W)      | 59.60    | n/a        | 48.63          |
 | Temperature (°C)     | 48.65    | n/a        | 45.34          |
 
