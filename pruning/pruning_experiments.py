@@ -25,7 +25,7 @@ args = parser.parse_args()
 strategy = args.strategy
 
 # Load and preprocess PubMedQA dev set
-with open("../../pubmedqa/data/pqal_fold0/dev_set.json") as f:
+with open("../evaluation/dev_set.json") as f:
     raw_data = json.load(f)
 
 # Extract relevant fields from raw JSON into structured examples
