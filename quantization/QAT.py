@@ -19,6 +19,31 @@ import time
 import subprocess
 from sklearn.metrics import accuracy_score
 
+def symmetric_quantize(tensor, num_bits=8):
+    qmin = -2 ** (num_bits - 1)
+    qmax = 2 ** (num_bits - 1) - 1
+    max_val = tensor.abs().max()
+    scale = max_val / qmax
+    q_tensor = torch.clamp(torch.round(tensor / scale), qmin, qmax)
+    return q_tensor, scale
+
+def asymmetric_quantize(tensor, num_bits=8):
+    qmin = 0
+    qmax = 2 ** num_bits - 1
+    min_val = tensor.min()
+    max_val = tensor.max()
+    scale = (max_val - min_val) / (qmax - qmin + 1e-8)
+    zero_point = torch.round(qmin - min_val / scale)
+    q_tensor = torch.clamp(torch.round(tensor / scale + zero_point), qmin, qmax)
+    return q_tensor, scale, zero_point
+
+def dequantize(q_tensor, scale, zero_point=None):
+    if zero_point is None:
+        return q_tensor * scale  # symmetric
+    else:
+        return (q_tensor - zero_point) * scale  # asymmetric
+
+
 # Load and preprocess PubMedQA training set
 with open("../evaluation/dev_set.json") as f:
     raw_data = json.load(f)
@@ -73,9 +98,23 @@ for epoch in range(10):
         batch = {k: v.to("cuda") for k, v in batch.items()}
         optimizer.zero_grad()
         # Mixed precision context
-        with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
-            out = model(**batch, use_cache=False)
-            loss = out.loss
+        # with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
+        # Simulate symmetric quantization on weights
+        for name, param in model.named_parameters():
+            if "weight" in name and param.requires_grad:
+                q_param, scale = symmetric_quantize(param.data)
+                param.data = dequantize(q_param, scale)  # simulate dequantization after int8
+        
+        # Simulate asymmetric quantization on activations
+        with torch.no_grad():
+            for k in ["input_ids", "attention_mask"]:
+                if k in batch:
+                    q_act, scale, zp = asymmetric_quantize(batch[k])
+                    batch[k] = dequantize(q_act, scale, zp).type_as(batch[k])
+        
+        out = model(**batch, use_cache=False)
+
+        loss = out.loss
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
