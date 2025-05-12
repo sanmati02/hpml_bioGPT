@@ -86,8 +86,7 @@ model.gradient_checkpointing_enable()
 model.to("cuda")
 optimizer = AdamW(model.parameters(), lr=1e-5)
 
-# AMP setup (Automatic Mixed Precision)
-scaler = torch.amp.GradScaler()
+
 
 # Training with float16 AMP
 for epoch in range(10):
@@ -174,9 +173,7 @@ for q in tqdm(questions):
     # Inference timing
     start_time = time.time()
     with torch.inference_mode():
-         # Float16 inference with no_grad context
-        with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
-            output = model.generate(**inputs, max_new_tokens=256, num_beams = 1, early_stopping = False, do_sample = False)
+        output = model.generate(**inputs, max_new_tokens=256, num_beams = 1, early_stopping = False, do_sample = False)
     latency = time.time() - start_time
     
     # Decode answer
