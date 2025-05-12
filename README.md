@@ -105,7 +105,7 @@ Scripts are organized by technique:
 - `baseline.py`: Runs BioGPT without optimization
 - `precision_reduction/`: float16, float4, int8, int4 experiments
 - `pruning/`: unstructured, structured, block pruning
-- `quantization/`: PTQ (dynamic int8) and QAT (float16)
+- `quantization/`: PTQ and QAT
 - `tensor_rewriting/`: `torch.compile` backends (`aot_eager`, `tvm`, `inductor`) and modes (`default`, `ansor`, `max-autotune`)
 - `combined_experiments/`: Full pipelines for post-training or training-time combinations
 - `evaluation/`: PubMed Test & Dev Dataset and ground truth samples that each of our optimized models 
@@ -144,7 +144,7 @@ Scripts are organized by technique:
 
 ### Quantization
 
-| Metric               | Baseline | PTQ (int8) | QAT (float16) |
+| Metric               | Baseline | PTQ        | QAT            |
 |----------------------|----------|------------|----------------|
 | Accuracy (%)         | 55.2     | 46.6       | 53.2           |
 | Latency (s)          | 1.93     | 6.48       | 1.80           |
